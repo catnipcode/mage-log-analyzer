@@ -79,14 +79,21 @@
                 gap: 5px 20px;
             }
 
-            #api-credentials-wrapper a {
+            #api-credentials-wrapper a,
+            #footer a {
                 grid-column: span 2;
                 color: var(--text-muted);
                 font-size: 12px;
                 text-decoration: none;
             }
-            #api-credentials-wrapper a:hover {
+            #api-credentials-wrapper a:hover,
+            #footer a:hover {
                 text-decoration: underline;
+            }
+
+            #footer {
+                text-align: center;
+                margin-top: 15px;
             }
 
             /* Force the button to start on a new row and span only 1 column */
@@ -305,7 +312,7 @@
                             oninput="saveInLocalStorage()"
                         />
                     </div>
-                    <a href="https://classic.warcraftlogs.com/api/clients/"
+                    <a href="https://classic.warcraftlogs.com/api/clients/" target="_blank"
                         >Click here to create your API client id and and secret</a
                     >
                 </div>
@@ -334,6 +341,11 @@
                         border="0"
                         alt="Buy Me a Coffee at ko-fi.com"
                 /></a>
+            </div>
+            <div id="footer">
+                <a href="https://github.com/catnipcode/mage-log-analyzer" target="_blank"
+                    >View Source Code on Github</a
+                >
             </div>
         </div>
         <script>
