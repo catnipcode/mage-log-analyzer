@@ -932,7 +932,7 @@
                     (x, i) => castingUptimeFilterMask[i]
                 );
 
-                // Calculate Downtime
+                // Calculate Uptime
                 let totalUptime = 0;
                 let lastNonZeroTimestep = null;
 
@@ -942,33 +942,40 @@
                     }
                     lastNonZeroTimestep = step[1] == 1 ? step[0] : null;
                 }
-                totalUptime = totalUptime;
 
-                const totalUptimePercentage = ((100 * totalUptime) / fightLength).toFixed(1);
+                // Invert Uptime Graph to obtain a Downtime Graph
+                let downtimeGraph = cleanCastingUptimeGraph.map((x) => [x[0], x[1] == 0 ? 1 : 0]);
+                // First and last step should still be zero.
+                downtimeGraph[0][1] = 0;
+                downtimeGraph[downtimeGraph.length - 1][1] = 0;
 
-                renderCastingUptimeAnalysis(totalUptimePercentage, cleanCastingUptimeGraph);
+                // const totalUptimePercentage = ((100 * totalUptime) / fightLength).toFixed(1);
+                const totalDowntime = fightLength - totalUptime;
+                const totalDowntimePercentage = ((100 * totalDowntime) / fightLength).toFixed(1);
+
+                renderCastingUptimeAnalysis(totalDowntimePercentage, downtimeGraph);
             }
 
-            function renderCastingUptimeAnalysis(totalUptimePercentage, cleanCastingUptimeGraph) {
+            function renderCastingUptimeAnalysis(totalDowntimePercentage, cleanCastingUptimeGraph) {
                 const resultsCol = document.getElementById("results-right-col");
 
                 let analysisElement = document.createElement("div");
                 analysisElement.classList.add("analysis-element");
 
-                if (totalUptimePercentage >= 93) {
+                if (totalDowntimePercentage <= 7) {
                     analysisElement.innerHTML += `
-                                              <h3>✅ Total Casting Uptime: ${totalUptimePercentage}%</h3>
-                                              `;
-                } else if (totalUptimePercentage >= 88) {
+                        <h3>✅ Total Casting Downtime: ${totalDowntimePercentage}%</h3>
+                        `;
+                } else if (totalDowntimePercentage <= 12) {
                     analysisElement.innerHTML += `
-                                                <h3>⚠️ Total Casting Uptime: ${totalUptimePercentage}%</h3>
-                                                <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
-                                                `;
+                        <h3>⚠️ Total Casting Downtime: ${totalDowntimePercentage}%</h3>
+                        <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                        `;
                 } else {
                     analysisElement.innerHTML += `
-                                                <h3>❌ Total Casting Uptime: ${totalUptimePercentage}%</h3>
-                                                <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
-                                          `;
+                        <h3>❌ Total Casting Downtime: ${totalDowntimePercentage}%</h3>
+                        <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                    `;
                 }
 
                 const canvas = document.createElement("canvas");
@@ -977,7 +984,7 @@
                     fill: true,
                     borderWidth: 0,
                 };
-                renderStepFunction(cleanCastingUptimeGraph, canvas, "#65b76e", graphOptions);
+                renderStepFunction(cleanCastingUptimeGraph, canvas, "#db5858", graphOptions);
 
                 let chartContainer = document.createElement("div");
                 chartContainer.classList.add("chart-container");
