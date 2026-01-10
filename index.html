@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Catnip's WCL Mage Analyzer</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            :root {
+                --bg-color: #0d0d0d;
+                --panel-bg: #1a1a1a;
+                --border-color: #2d2d2d;
+                --input-bg: #242424;
+                --text-main: #cecece;
+                --text-muted: #777777;
+                --accent-grey: #404040;
+            }
+
+            body {
+                background-color: var(--bg-color);
+                color: var(--text-main);
+                font-family: "Inter", -apple-system, sans-serif;
+                margin: 0;
+                padding: 24px;
+            }
+
+            p {
+                line-height: 1.5;
+            }
+
+            h1,
+            h2 {
+                font-family: "Rajdhani", sans-serif;
+                font-weight: 500;
+            }
+
+            #title-bar {
+                display: flex;
+                align-items: end;
+            }
+
+            #title {
+                flex: 1;
+            }
+
+            #kofi-titlebar {
+                flex: 0;
+                margin-bottom: 0.83em;
+            }
+
+            #kofi-footer {
+                margin-top: 30px;
+                text-align: center;
+                display: none;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            #initial-input-panel {
+                background-color: var(--panel-bg);
+                padding: 20px;
+                border-radius: 6px;
+                border: 1px solid var(--border-color);
+
+                /* Grid layout */
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+
+            #api-credentials-wrapper {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5px 20px;
+            }
+
+            #api-credentials-wrapper a {
+                grid-column: span 2;
+                color: var(--text-muted);
+                font-size: 12px;
+                text-decoration: none;
+            }
+            #api-credentials-wrapper a:hover {
+                text-decoration: underline;
+            }
+
+            /* Force the button to start on a new row and span only 1 column */
+            #initial-input-panel > button {
+                grid-column: span 2;
+            }
+
+            /* Force the hidden panel to the third row when it appears */
+            #fight-and-char-selection-panel {
+                grid-column: span 2;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                padding-top: 20px;
+                border-top: 1px solid var(--border-color);
+            }
+
+            .input-group {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .input-group label {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1.2px;
+                color: var(--text-muted);
+                margin-bottom: 8px;
+            }
+
+            input[type="text"],
+            input[type="password"],
+            select {
+                background-color: var(--input-bg);
+                border: 1px solid var(--border-color);
+                color: var(--text-main);
+                padding: 10px 14px;
+                border-radius: 4px;
+                font-size: 13px;
+                outline: none;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            input:focus,
+            select:focus {
+                border-color: #555;
+                background-color: #2a2a2a;
+            }
+
+            button {
+                background-color: #2d2d2d;
+                color: #efefef;
+                border: 1px solid var(--border-color);
+                padding: 0 24px;
+                height: 38px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 600;
+                transition: all 0.2s ease;
+                white-space: nowrap;
+            }
+
+            button:hover {
+                background-color: var(--accent-grey);
+                border-color: #555;
+            }
+
+            button:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+
+            #results-wrapper {
+                display: flex;
+                /* grid-template-columns: 1fr 1fr; */
+                gap: 15px;
+                margin-top: 30px;
+                flex-direction: row;
+                /* background-color: var(--panel-bg); */
+                /* padding: 20px; */
+                /* border-radius: 6px; */
+                /* border: 1px solid var(--border-color); */
+            }
+
+            #results-wrapper > * {
+                width: 100%;
+                min-width: 200px;
+                /* min-height: 100px; */
+            }
+
+            #results-left-col,
+            #results-right-col {
+                /* width: calc(50%-15px); */
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .analysis-element {
+                background-color: var(--panel-bg);
+                padding: 20px;
+                border-radius: 6px;
+                border: 1px solid var(--border-color);
+            }
+
+            .analysis-element > p {
+                color: var(--text-muted);
+                font-size: 14px;
+            }
+
+            .analysis-element > h3 {
+                margin: 0;
+            }
+
+            .chart-container {
+                margin-top: 28px;
+                margin-bottom: -7px;
+                position: relative;
+                width: 100%;
+                height: 110px;
+            }
+
+            .hidden {
+                display: none !important;
+            }
+
+            .kill-fight {
+                color: lightgreen;
+            }
+            .wipe-fight {
+                color: lightcoral;
+            }
+
+            .spinner {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-top-color: #fff;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @media (max-width: 768px) {
+                #initial-input-panel {
+                    grid-template-columns: 1fr;
+                }
+                #initial-input-panel > button {
+                    grid-column: span 1;
+                }
+                #fight-and-char-selection-panel {
+                    grid-column: span 1;
+                }
+                #results-wrapper {
+                    flex-direction: column;
+                }
+                #kofi-titlebar {
+                    display: none;
+                }
+                #kofi-footer {
+                    display: block;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div id="title-bar">
+                <div id="title">
+                    <h2>Catnip's Mage Log Analyzer</h2>
+                </div>
+                <div id="kofi-titlebar">
+                    <a href="https://ko-fi.com/T6T71S149H" target="_blank"
+                        ><img
+                            height="36"
+                            style="border: 0px; height: 36px"
+                            src="https://storage.ko-fi.com/cdn/kofi3.png?v=6"
+                            border="0"
+                            alt="Buy Me a Coffee at ko-fi.com"
+                    /></a>
+                </div>
+            </div>
+            <div id="initial-input-panel">
+                <div id="wcl-input-wrapper">
+                    <div class="input-group">
+                        <label>Warcraftlogs Report Link</label>
+                        <input
+                            type="text"
+                            id="wclLink"
+                            oninput="saveInLocalStorage()"
+                            placeholder="e.g. https://classic.warcraftlogs.com/reports/X3nApTFtzVdRW1aL"
+                        />
+                    </div>
+                </div>
+                <div id="api-credentials-wrapper">
+                    <div class="input-group">
+                        <label>API Client ID</label>
+                        <input type="text" id="apiClientId" oninput="saveInLocalStorage()" />
+                    </div>
+                    <div class="input-group">
+                        <label>API Client Secret</label>
+                        <input
+                            type="password"
+                            id="apiClientSecret"
+                            oninput="saveInLocalStorage()"
+                        />
+                    </div>
+                    <a href="https://classic.warcraftlogs.com/api/clients/"
+                        >Click here to create your API client id and and secret</a
+                    >
+                </div>
+                <button id="analyze-log-btn" onclick="processWclLink()">Analyze Log</button>
+                <div id="fight-and-char-selection-panel" class="hidden">
+                    <div class="input-group">
+                        <label>Fight</label>
+                        <select onchange="buildFullAnalysis()" id="fightId"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Character</label>
+                        <select onchange="buildFullAnalysis()" id="charId"></select>
+                    </div>
+                </div>
+            </div>
+            <div id="results-wrapper">
+                <div id="results-left-col"></div>
+                <div id="results-right-col"></div>
+            </div>
+            <div id="kofi-footer">
+                <a href="https://ko-fi.com/T6T71S149H" target="_blank"
+                    ><img
+                        height="36"
+                        style="border: 0px; height: 36px"
+                        src="https://storage.ko-fi.com/cdn/kofi3.png?v=6"
+                        border="0"
+                        alt="Buy Me a Coffee at ko-fi.com"
+                /></a>
+            </div>
+        </div>
+        <script>
+            //Run this on page load
+            loadFromLocalStorage();
+            originalButtonText = document.getElementById("analyze-log-btn").innerHTML;
+
+            async function getAccessToken() {
+                const response = await fetch("https://www.warcraftlogs.com/oauth/token", {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Basic " + btoa(apiClientId + ":" + apiClientSecret),
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: "grant_type=client_credentials",
+                });
+
+                const data = await response.json();
+                if (data.access_token) {
+                    return data.access_token;
+                } else {
+                    alert("Failed to authenticate with Warcraft Logs. Check API key.");
+                    throw new Error("Failed to authenticate with Warcraft Logs");
+                }
+            }
+
+            async function fetchWCL(query) {
+                const response = await fetch("https://www.warcraftlogs.com/api/v2/client", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(query),
+                });
+                return await response.json();
+            }
+
+            async function processWclLink() {
+                const analyzeLogButton = document.getElementById("analyze-log-btn");
+                analyzeLogButton.innerHTML = "<div class='spinner' />";
+
+                apiClientId = document.getElementById("apiClientId").value;
+                apiClientSecret = document.getElementById("apiClientSecret").value;
+                const wclLink = document.getElementById("wclLink").value;
+
+                logId = getLogIdFromUrl(wclLink);
+                accessToken = await getAccessToken();
+                // console.log(accessToken);
+
+                const fightInfoResponse = await fetchWCL(getWclLinkQuery(logId));
+
+                // Populate fights dropdown
+                const fightSelection = document.getElementById("fightId");
+                const fights = fightInfoResponse.data.reportData.report.fights;
+                fightSelection.innerHTML = "";
+                for (let i = 0; i < fights.length; i++) {
+                    var option = document.createElement("option");
+                    option.value = fights[i].id;
+                    option.innerHTML = fights[i].name + (fights[i].kill ? " (Kill)" : " (Wipe)");
+                    option.classList.add(fights[i].kill ? "kill-fight" : "wipe-fight");
+                    fightSelection.add(option);
+                }
+                preselectedFight = fights.find((x) => x.kill)?.id;
+                if (preselectedFight) {
+                    fightSelection.value = preselectedFight;
+                }
+
+                // Populate char dropdown with mages
+                const fightIds = fightInfoResponse.data.reportData.report.fights.map((x) => x.id);
+                const charListResponse = await fetchWCL(
+                    getCharListFromAllFightsQuery(logId, fightIds)
+                );
+
+                const chars =
+                    charListResponse.data.reportData.report.playerDetails.data.playerDetails.dps
+                        .filter((x) => x.type == "Mage")
+                        .sort((a, b) => a.name.localeCompare(b.name));
+
+                const charSelection = document.getElementById("charId");
+                charSelection.innerHTML = "";
+                for (let i = 0; i < chars.length; i++) {
+                    var option = document.createElement("option");
+                    option.value = chars[i].id;
+                    option.innerHTML = chars[i].name;
+                    charSelection.add(option);
+                }
+
+                // Unhide fights and char selection panel
+                document
+                    .getElementById("fight-and-char-selection-panel")
+                    .classList.remove("hidden");
+
+                // Run initial full analysis
+                buildFullAnalysis();
+            }
+
+            async function buildFullAnalysis() {
+                // Loading animation
+                const analyzeLogButton = document.getElementById("analyze-log-btn");
+                analyzeLogButton.innerHTML = "<div class='spinner' />";
+                const fightId = document.getElementById("fightId").value;
+                const charId = document.getElementById("charId").value;
+
+                // Get big API response with everything
+                const fightDetailsResponse = await fetchWCL(
+                    getFightDetailsQuery(logId, fightId, charId)
+                );
+
+                document.getElementById("results-left-col").innerHTML = "";
+                document.getElementById("results-right-col").innerHTML = "";
+
+                // Check if char was in selected fight
+                const charDetails =
+                    fightDetailsResponse.data.reportData.report.playerDetails.data.playerDetails.dps.find(
+                        (x) => x.id == charId
+                    );
+                if (charDetails == undefined) {
+                    return;
+                }
+
+                const charTalents = charDetails.combatantInfo.talents.map((x) => x.name);
+                const charSpec = charDetails.specs[0].spec;
+
+                runAnalysis("Hit", () => buildHitAnalysis(fightDetailsResponse, charId));
+                runAnalysis("Potion", () => buildPotionAnalysis(fightDetailsResponse));
+                runAnalysis("T6", () => buildT6Analysis(fightDetailsResponse, charTalents));
+                runAnalysis("Gloves", () => buildGlovesAnalysis(fightDetailsResponse));
+                runAnalysis("IcelanceFoF", () =>
+                    buildIcelanceFoFAnalysis(fightDetailsResponse, charSpec)
+                );
+                runAnalysis("Bomb", () => buildBombAnalysis(fightDetailsResponse, charTalents));
+                runAnalysis("Uptime", () =>
+                    buildCastingUptimeAnalysis(fightDetailsResponse, charId)
+                );
+
+                // Remove loading animation
+                analyzeLogButton.innerHTML = originalButtonText;
+            }
+
+            // Hit
+            function buildHitAnalysis(response, charId) {
+                const charDetails =
+                    response.data.reportData.report.playerDetails.data.playerDetails.dps.find(
+                        (x) => x.id == charId
+                    );
+
+                const totalHitValue =
+                    charDetails.combatantInfo.stats.Hit.min +
+                    charDetails.combatantInfo.stats.Expertise.min;
+
+                renderHitAnalysis(totalHitValue);
+            }
+
+            function renderHitAnalysis(totalHitValue) {
+                let analysisElement = document.createElement("div");
+                analysisElement.classList.add("analysis-element");
+
+                if (totalHitValue > 5125) {
+                    analysisElement.innerHTML += `
+                                  <h3>❌ Over hit cap: ${totalHitValue}</h3>
+                                  <p>Hit cap is 5100.</p>
+                              `;
+                } else if (totalHitValue < 5100) {
+                    analysisElement.innerHTML += `
+                                  <h3>❌ Under hit cap: ${totalHitValue}</h3>
+                                  <p>Hit cap is 5100.</p>
+                              `;
+                } else {
+                    analysisElement.innerHTML += `
+                                  <h3>✅ Hit Rating: ${totalHitValue}</h3>
+                              `;
+                }
+
+                const resultsCol = document.getElementById("results-left-col");
+                resultsCol.appendChild(analysisElement);
+            }
+
+            // Potions
+            function buildPotionAnalysis(response) {
+                // Potion Events
+                const potionEvents = response.data.reportData.report.potionEvents;
+
+                const firstPotionEnd = potionEvents.data.filter((x) => x.type == "removebuff")[0]
+                    ?.timestamp;
+                const lastPotionStart = potionEvents.data
+                    .filter((x) => x.type == "applybuff")
+                    .pop()?.timestamp;
+
+                let nPotionsUsed;
+                if (
+                    firstPotionEnd &&
+                    lastPotionStart &&
+                    lastPotionStart > firstPotionEnd + 30 * 1000
+                ) {
+                    nPotionsUsed = 2;
+                } else if (firstPotionEnd || lastPotionStart) {
+                    nPotionsUsed = 1;
+                } else {
+                    nPotionsUsed = 0;
+                }
+
+                // Potion Graph
+                const potionGraphUnscaled =
+                    response.data.reportData.report.potionGraph.data.series[0]?.data;
+                const potionGraph = potionGraphUnscaled
+                    ? rescaleGraphTimeline(potionGraphUnscaled)
+                    : undefined;
+
+                renderPotionAnalysis(nPotionsUsed, potionGraph);
+            }
+
+            function renderPotionAnalysis(nPotionsUsed, potionGraph) {
+                const resultsCol = document.getElementById("results-left-col");
+
+                let analysisElement = document.createElement("div");
+                analysisElement.classList.add("analysis-element");
+
+                if (nPotionsUsed < 2) {
+                    analysisElement.innerHTML += `
+                                  <h3>❌ Potions used: ${nPotionsUsed}</h3>
+                                  <p>You should use 2 potions per fight.</p>
+                              `;
+                } else {
+                    analysisElement.innerHTML += `
+                                  <h3>✅ Potions used: ${nPotionsUsed}</h3>
+                              `;
+                }
+
+                if (potionGraph) {
+                    const canvas = document.createElement("canvas");
+                    renderStepFunction(potionGraph, canvas, "#cfbb79");
+
+                    let chartContainer = document.createElement("div");
+                    chartContainer.classList.add("chart-container");
+
+                    chartContainer.appendChild(canvas);
+                    analysisElement.append(chartContainer);
+                }
+
+                resultsCol.appendChild(analysisElement);
+            }
+
+            // T6 Buff
+            function buildT6Analysis(response, charTalents) {
+                const t6Talent = charTalents.includes("Invocation")
+                    ? "evo"
+                    : charTalents.includes("Rune of Power")
+                    ? "rune"
+                    : null;
+                if (!t6Talent) return;
+
+                // const t6Events = response.data.reportData.report[t6Talent + "Events"].data;
+                const t6GraphUnscaled =
+                    response.data.reportData.report[t6Talent + "Graph"].data.series[0]?.data;
+                const t6Graph = t6GraphUnscaled ? rescaleGraphTimeline(t6GraphUnscaled) : undefined;
+
+                // Calculate uptime
+                let t6Uptime = 0;
+                let lastOneTimestamp = null;
+
+                if (t6Graph) {
+                    for (const step of t6Graph) {
+                        if (lastOneTimestamp != null) {
+                            t6Uptime += step[0] - lastOneTimestamp;
+                        }
+                        if (step[1] == 1) {
+                            lastOneTimestamp = step[0];
+                        }
+                        if (step[1] == 0) {
+                            lastOneTimestamp = null;
+                        }
+                    }
+                }
+
+                const fightStartTime = response.data.reportData.report.fights[0].startTime;
+                const fightEndTime = response.data.reportData.report.fights[0].endTime;
+                const fightLength = (fightEndTime - fightStartTime) / 1000;
+
+                const t6UptimePercentage = ((100 * t6Uptime) / fightLength).toFixed(1);
+
+                renderT6Analysis(t6UptimePercentage, t6Graph, t6Talent);
+            }
+
+            function renderT6Analysis(t6UptimePercentage, t6Graph, t6Talent) {
+                const resultsCol = document.getElementById("results-right-col");
+                const t6TalentName = t6Talent == "evo" ? "Invocation" : "Rune of Power";
+
+                let analysisElement = document.createElement("div");
+                analysisElement.classList.add("analysis-element");
+
+                if (t6UptimePercentage >= 95) {
+                    analysisElement.innerHTML += `
+                                  <h3>✅ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                              `;
+                } else if (t6UptimePercentage >= 90) {
+                    analysisElement.innerHTML += `
+                                  <h3>⚠️ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                  <p>Aim for 95%+ ${t6TalentName} uptime.</p>
+                              `;
+                } else {
+                    analysisElement.innerHTML += `
+                                  <h3>❌ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                  <p>Aim for 95%+ ${t6TalentName} uptime.</p>
+                              `;
+                }
+
+                if (t6Graph) {
+                    const canvas = document.createElement("canvas");
+                    renderStepFunction(t6Graph, canvas, "#dda0dd");
+
+                    let chartContainer = document.createElement("div");
+                    chartContainer.classList.add("chart-container");
+
+                    chartContainer.appendChild(canvas);
+                    analysisElement.append(chartContainer);
+                }
+                resultsCol.appendChild(analysisElement);
+            }
+
+            // Gloves
+            function buildGlovesAnalysis(response) {
+                const glovesEvents = response.data.reportData.report.glovesEvents.data;
+                const applyGlovesEvents = glovesEvents.filter((x) => x.type == "applybuff");
+
+                let nGlovesUsed = 0;
+                for (let i = 0; i < applyGlovesEvents.length; i++) {
+                    if (
+                        i == 0 ||
+                        applyGlovesEvents[i].timestamp - applyGlovesEvents[i - 1].timestamp >
+                            30 * 1000
+                    ) {
+                        nGlovesUsed++;
+                    }
+                }
+
+                const glovesGraphUnscaled =
+                    response.data.reportData.report.glovesGraph.data.series[0].data;
+                const glovesGraph = rescaleGraphTimeline(glovesGraphUnscaled);
+
+                const chancesToUseGloves = Math.ceil(
+                    (0.85 * (glovesGraph[glovesGraph.length - 1][0] - 15)) / 60
+                );
+
+                renderGlovesAnalysis(nGlovesUsed, glovesGraph, chancesToUseGloves);
+            }
+
+            function renderGlovesAnalysis(nGlovesUsed, glovesGraph, chancesToUseGloves) {
+                const resultsCol = document.getElementById("results-right-col");
+
+                let analysisElement = document.createElement("div");
+                analysisElement.classList.add("analysis-element");
+
+                if (nGlovesUsed >= chancesToUseGloves) {
+                    analysisElement.innerHTML += `
+                                  <h3>✅ Gloves used: ${nGlovesUsed}</h3>
+                                  <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
+                                  `;
+                } else if (nGlovesUsed == 0) {
+                    analysisElement.innerHTML += `
+                                    <h3>❌ Gloves used: ${nGlovesUsed}</h3>
+                                    <p>You should consider becoming an engineer.</p>
+                                    `;
+                } else {
+                    analysisElement.innerHTML += `
+                                    <h3>❌ Gloves used: ${nGlovesUsed}</h3>
+                                    <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
+                              `;
+                }
+
+                const canvas = document.createElement("canvas");
+                renderStepFunction(glovesGraph, canvas, "#0f8fc0");
+
+                let chartContainer = document.createElement("div");
+                chartContainer.classList.add("chart-container");
+
+                chartContainer.appendChild(canvas);
+                analysisElement.append(chartContainer);
+
+                resultsCol.appendChild(analysisElement);
+            }
+
+            // Bomb
+            function buildBombAnalysis(response, charTalents) {
+                const bombTalent = charTalents.includes("Living Bomb")
+                    ? "Living Bomb"
+                    : charTalents.includes("Nether Tempest")
+                    ? "Nether Tempest"
+                    : null;
+                if (!bombTalent) return;
+
+                const bombEvents =
+                    bombTalent == "Living Bomb"
+                        ? response.data.reportData.report.LBEvents.data
+                        : response.data.reportData.report.NTEvents.data;
+
+                const bombGraphsUnscaled =
+                    bombTalent == "Living Bomb"
+                        ? response.data.reportData.report.LBGraph.data.series
+                        : response.data.reportData.report.NTGraph.data.series;
+
+                const bombGraphs = bombGraphsUnscaled
+                    .filter((x) => x.type == "Boss")
+                    .map((x) => ({ ...x, data: rescaleGraphTimeline(x.data) }));
+
+                const combinedBombGraph = sumStepFunctions(bombGraphs.map((x) => x.data));
+
+                // Bomb Clipping
+                const nBombsApplied = bombEvents.filter((x) => x.type == "applydebuff").length;
+                const nBombsClipped = bombEvents.filter((x) => x.type == "refreshdebuff").length;
+                const nBosses = bombGraphs.length;
+                const ratioBombsClipped = (
+                    (100 * nBombsClipped) /
+                    (nBombsClipped + nBombsApplied - nBosses)
+                ).toFixed(0);
+
+                // Bomb Uptime
+                let bombUptime = 0;
+                let lastNonZeroTimestamp = null;
+
+                for (const step of combinedBombGraph) {
+                    if (lastNonZeroTimestamp != null) {
+                        bombUptime += step[0] - lastNonZeroTimestamp;
+                    }
+                    if (step[1] >= 1) {
+                        lastNonZeroTimestamp = step[0];
+                    }
+                    if (step[1] == 0) {
+                        lastNonZeroTimestamp = null;
+                    }
+                }
+
+                const fightStartTime = response.data.reportData.report.fights[0].startTime;
+                const fightEndTime = response.data.reportData.report.fights[0].endTime;
+                const fightLength = (fightEndTime - fightStartTime) / 1000;
+                const bombUptimePercentage = ((100 * bombUptime) / fightLength).toFixed(1);
+
+                renderBombAnalysis(bombTalent, bombUptimePercentage, ratioBombsClipped, bombGraphs);
+            }
+
+            function renderBombAnalysis(
+                bombTalent,
+                bombUptimePercentage,
+                ratioBombsClipped,
+                bombGraphs
+            ) {
+                const resultsCol = document.getElementById("results-left-col");
+
+                let analysisElement = document.createElement("div");
+                analysisElement.classList.add("analysis-element");
+
+                if (bombUptimePercentage >= 90) {
+                    analysisElement.innerHTML += `
+                                  <h3>✅ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
+                                  `;
+                } else {
+                    analysisElement.innerHTML += `
+                                    <h3>❌ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
+                                    `;
+                }
+                analysisElement.innerHTML += `<p></p>`;
+                if (ratioBombsClipped >= 50) {
+                    analysisElement.innerHTML += `
+                                  <h3>✅ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
+                                  `;
+                } else {
+                    analysisElement.innerHTML += `
+                                    <h3>❌ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
+                                    <p>You should clip your bombs. Type !bomb on Mage Discord to learn how. (You need to select a role first)</p>
+                                    `;
+                }
+
+                for (const bossGraph of bombGraphs) {
+                    const graphOptions = {
+                        yLabel: bossGraph.name,
+                    };
+                    const canvas = document.createElement("canvas");
+                    renderStepFunction(bossGraph.data, canvas, "#ffa500", graphOptions);
+
+                    let chartContainer = document.createElement("div");
+                    chartContainer.classList.add("chart-container");
+
+                    chartContainer.appendChild(canvas);
+                    analysisElement.append(chartContainer);
+                }
+
+                resultsCol.appendChild(analysisElement);
+            }
+
+            // Casting Uptime
+            function buildCastingUptimeAnalysis(response, charId) {
+                const fightStartTime = response.data.reportData.report.fights[0].startTime;
+                const fightEndTime = response.data.reportData.report.fights[0].endTime;
+                const fightLength = (fightEndTime - fightStartTime) / 1000;
+
+                const castingUptimeEvents =
+                    response.data.reportData.report.castUptimeEvents.data.map((x) => ({
+                        ...x,
+                        timestamp: (x.timestamp - fightStartTime) / 1000,
+                    }));
+                // Add Fight Start and End event
+                castingUptimeEvents.unshift({
+                    type: "fightstart",
+                    timestamp: 0,
+                });
+                castingUptimeEvents.push({
+                    type: "fightend",
+                    timestamp: fightLength,
+                });
+
+                // Calculate conservative max GCD
+                const charDetails =
+                    response.data.reportData.report.playerDetails.data.playerDetails.dps.find(
+                        (x) => x.id == charId
+                    );
+                const hasteValue = charDetails.combatantInfo.stats.Haste.min;
+                const maxGCD = Math.max(1.5 / (1 + hasteValue / 42500), 1);
+
+                // Create casting uptime step function from cast events
+                let castingUptimeGraph = [];
+                let lastEvent = null;
+
+                for (const e of castingUptimeEvents) {
+                    // Add downtime step if last cast is too long ago
+                    if (lastEvent != null && lastEvent.type == "cast") {
+                        const gapLimit =
+                            lastEvent.abilityGameID === 12051
+                                ? 3 // Special case for Evocation (flat 3s grace period)
+                                : maxGCD;
+                        if (e.timestamp > lastEvent.timestamp + gapLimit) {
+                            castingUptimeGraph.push([lastEvent.timestamp + gapLimit, 0]);
+                        }
+                    }
+
+                    if (e.type == "fightstart") {
+                        castingUptimeGraph.push([e.timestamp, 0]);
+                    }
+                    if (e.type == "fightend") {
+                        if (lastEvent && lastEvent.type == "begincast") {
+                            castingUptimeGraph.push([lastEvent.timestamp, 0]);
+                        }
+                        castingUptimeGraph.push([e.timestamp, 0]);
+                    }
+
+                    if (e.type == "begincast") {
+                        lastEvent = e;
+                    }
+
+                    if (e.type == "cast") {
+                        if (
+                            lastEvent != null &&
+                            lastEvent.type == "begincast" &&
+                            lastEvent.abilityGameID == e.abilityGameID
+                        ) {
+                            // Push one-step for cast start
+                            castingUptimeGraph.push([lastEvent.timestamp, 1]);
+
+                            if (e.timestamp - lastEvent.timestamp < 0.1) {
+                                // Special case for FFB because it triggers 2 events
+                                lastEvent = e;
+                            } else {
+                                // Regular case: Push zero-step for cast end
+                                castingUptimeGraph.push([e.timestamp, 0]);
+                                lastEvent = null;
+                            }
+                        } else {
+                            // Case for instant casts because they usually dont have a "begincast" event.
+                            castingUptimeGraph.push([e.timestamp, 1]);
+                            lastEvent = e;
+                        }
+                    }
+                }
+
+                // Remove steps that happen faster than 0.1s
+                const castingUptimeStepSizes = castingUptimeGraph.map((x, i, steps) =>
+                    i == steps.length - 1 ? 10 : steps[i + 1][0] - steps[i][0]
+                );
+                const castingUptimeFilterMask = castingUptimeStepSizes.map((x) => x > 0.1);
+
+                const cleanCastingUptimeGraph = castingUptimeGraph.filter(
+                    (x, i) => castingUptimeFilterMask[i]
+                );
+
+                // Calculate Downtime
+                let totalUptime = 0;
+                let lastNonZeroTimestep = null;
+
+                for (const step of cleanCastingUptimeGraph) {
+                    if (lastNonZeroTimestep != null) {
+                        totalUptime += step[0] - lastNonZeroTimestep;
+                    }
+                    lastNonZeroTimestep = step[1] == 1 ? step[0] : null;
+                }
+                totalUptime = totalUptime;
+
+                const totalUptimePercentage = ((100 * totalUptime) / fightLength).toFixed(1);
+
+                renderCastingUptimeAnalysis(totalUptimePercentage, cleanCastingUptimeGraph);
+            }
+
+            function renderCastingUptimeAnalysis(totalUptimePercentage, cleanCastingUptimeGraph) {
+                const resultsCol = document.getElementById("results-right-col");
+
+                let analysisElement = document.createElement("div");
+                analysisElement.classList.add("analysis-element");
+
+                if (totalUptimePercentage >= 93) {
+                    analysisElement.innerHTML += `
+                                  <h3>✅ Total Casting Uptime: ${totalUptimePercentage}%</h3>
+                                  `;
+                } else if (totalUptimePercentage >= 88) {
+                    analysisElement.innerHTML += `
+                                    <h3>⚠️ Total Casting Uptime: ${totalUptimePercentage}%</h3>
+                                    <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                                    `;
+                } else {
+                    analysisElement.innerHTML += `
+                                    <h3>❌ Total Casting Uptime: ${totalUptimePercentage}%</h3>
+                                    <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                              `;
+                }
+
+                const canvas = document.createElement("canvas");
+
+                const graphOptions = {
+                    fill: true,
+                    borderWidth: 0,
+                };
+                renderStepFunction(cleanCastingUptimeGraph, canvas, "#65b76e", graphOptions);
+
+                let chartContainer = document.createElement("div");
+                chartContainer.classList.add("chart-container");
+
+                chartContainer.appendChild(canvas);
+                analysisElement.append(chartContainer);
+
+                resultsCol.appendChild(analysisElement);
+            }
+
+            // Ice Lances without FoF
+            function buildIcelanceFoFAnalysis(response, charSpec) {
+                if (charSpec != "Frost") {
+                    return;
+                }
+                const badIcelanceEvents = response.data.reportData.report.icelanceFoFEvents.data;
+                const nBadIcelances = badIcelanceEvents.length;
+
+                renderIcelanceFoFAnalysis(nBadIcelances);
+            }
+
+            function renderIcelanceFoFAnalysis(nBadIcelances) {
+                let analysisElement = document.createElement("div");
+                analysisElement.classList.add("analysis-element");
+
+                if (nBadIcelances == 0) {
+                    analysisElement.innerHTML += `
+                        <h3>✅ Ice Lances without Fingers of Frost Proc: ${nBadIcelances}</h3>
+                    `;
+                } else {
+                    analysisElement.innerHTML += `
+                        <h3>❌ Ice Lances without Fingers of Frost Proc: ${nBadIcelances}</h3>
+                    `;
+                }
+
+                const resultsCol = document.getElementById("results-left-col");
+                resultsCol.appendChild(analysisElement);
+            }
+
+            // Query functions
+            function getWclLinkQuery(logId) {
+                return {
+                    query: `
+                                  query {
+                                      reportData {
+                                          report(code: "${logId}") {
+                                              fights (killType: Encounters) {
+                                                  id
+                                                  name
+                                                  kill
+                                              }
+                                              rankedCharacters {
+                                                  id
+                                                  name
+                                                  classID
+                                              }
+                                          }
+                                      }
+                                  }
+                              `,
+                };
+            }
+
+            function getCharIdQuery(logId, fightId) {
+                return {
+                    query: `
+                        query {
+                            reportData {
+                                report(code: "${logId}") {
+                                    playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
+                                }
+                            }
+                        }
+                    `,
+                };
+            }
+
+            function getFightDetailsQuery(logId, fightId, charId) {
+                return {
+                    query: `
+                        query {
+                            reportData {
+                                report(code: "${logId}") {
+                                    playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
+                                    fights (fightIDs:[${fightId}]) {
+                                        startTime
+                                        endTime
+                                    }
+                                    potionEvents: events(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Buffs,
+                                        abilityID: 105702
+                                    ) {
+                                        data
+                                    }
+                                    potionGraph: graph(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Buffs,
+                                        abilityID: 105702
+                                    )
+                                    evoGraph: graph(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Buffs,
+                                        abilityID: 116257
+                                    )
+                                    runeGraph: graph(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Buffs,
+                                        abilityID: 116014
+                                    )
+                                    glovesEvents: events(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Buffs,
+                                        abilityID: 96230
+                                    ) {
+                                        data
+                                    }
+                                    glovesGraph: graph(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Buffs,
+                                        abilityID: 96230
+                                    )
+                                    LBEvents: events(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Debuffs,
+                                        abilityID: 44457
+                                    ) {
+                                        data
+                                    }
+                                    LBGraph: graph(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Debuffs,
+                                        abilityID: 44457
+                                    )
+                                    NTEvents: events(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Debuffs,
+                                        abilityID: 114923
+                                    ) {
+                                        data
+                                    }
+                                    NTGraph: graph(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Debuffs,
+                                        abilityID: 114923
+                                    )
+                                    castUptimeEvents: events(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Casts
+                                    ) {
+                                        data
+                                    }
+                                    icelanceFoFEvents: events(
+                                        fightIDs: [${fightId}],
+                                        sourceID: ${charId},
+                                        dataType: Casts,
+                                        filterExpression: "type = 'cast' and ability.id = 30455 and not in range from type = 'applybuff' and ability.id = 44544 to type = 'removebuff' and ability.id = 44544 group by source end"
+                                    ) {
+                                        data
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                };
+            }
+
+            function getCharListFromAllFightsQuery(logId, fightIds) {
+                return {
+                    query: `
+                        query {
+                            reportData {
+                                report(code: "${logId}") {
+                                    playerDetails(fightIDs:[${fightIds}], includeCombatantInfo:true)
+                                }
+                            }
+                        }
+                    `,
+                };
+            }
+
+            // Render functions
+
+            // Helper functions
+            function renderStepFunction(data, canvas, color, options) {
+                new Chart(canvas, {
+                    type: "line",
+                    data: {
+                        datasets: [
+                            {
+                                data: data,
+                                stepped: "before",
+                                fill: !!options?.fill,
+                                borderWidth:
+                                    options?.borderWidth != undefined ? options?.borderWidth : 2,
+                                borderColor: color,
+                                backgroundColor: color,
+                                pointRadius: 0,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: "index",
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            subtitle: {
+                                display: !!options?.yLabel,
+                                text: options?.yLabel,
+                                align: "start", // Aligns to the left
+                                font: { size: 12 },
+                                padding: { left: 0, bottom: 10 },
+                            },
+                            tooltip: {
+                                // 1. REMOVE THE COLOR BOX
+                                displayColors: false,
+                                bodySpacing: 0,
+                                titleMarginBottom: 0,
+                                callbacks: {
+                                    // 2. FORMAT THE TITLE (TIME)
+                                    title: function (context) {
+                                        const value = context[0].parsed.x;
+                                        const mins = Math.floor(value / 60);
+                                        const secs = Math.floor(value % 60);
+                                        return mins + ":" + (secs < 10 ? "0" : "") + secs;
+                                    },
+                                    // 3. REMOVE THE DATA LABEL (THE 0/1)
+                                    label: function () {
+                                        return ""; // Returns nothing for the body of the tooltip
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            x: {
+                                type: "linear",
+                                bounds: "data",
+                                ticks: {
+                                    callback: function (value) {
+                                        const minutes = Math.floor(value / 60);
+                                        const seconds = Math.floor(value % 60);
+                                        return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                                    },
+                                },
+                                grid: { display: false },
+                                border: { display: false },
+                                title: {
+                                    display: true,
+                                    text: "Fight Time", // Your label text
+                                    font: {
+                                        size: 12, // Small font size
+                                        family: "Arial",
+                                        weight: "normal",
+                                    },
+                                    padding: { bottom: 10 }, // Space between label and chart
+                                },
+                            },
+                            y: {
+                                min: 0,
+                                max: 1.1,
+                                ticks: { display: false },
+                                grid: { display: false },
+                                border: { display: false },
+                            },
+                        },
+                    },
+                });
+            }
+
+            function getLogIdFromUrl(url) {
+                const regex = /\/reports\/([a-zA-Z0-9]+)/;
+                const logId = url.match(regex)[1];
+
+                if (logId) {
+                    return logId;
+                } else {
+                    alert("Can't read Log URL");
+                    throw new Error("Can't read Log URL");
+                }
+            }
+
+            function rescaleGraphTimeline(unscaledGraph) {
+                const graphMinTime = unscaledGraph[0][0];
+                const graph = unscaledGraph.map((x) => [(x[0] - graphMinTime) / 1000, x[1]]);
+                return graph;
+            }
+
+            function sumStepFunctions(stepFunctions) {
+                const events = {};
+
+                for (const steps of stepFunctions) {
+                    let prevValue = 0;
+                    for (const [t, v] of steps) {
+                        // Calculate change (delta) and update the event at time t
+                        const delta = v - prevValue;
+                        events[t] = (events[t] || 0) + delta;
+                        prevValue = v;
+                    }
+                }
+
+                // Sort the time keys numerically
+                const sortedTimes = Object.keys(events)
+                    .map(Number)
+                    .sort((a, b) => a - b);
+
+                let total = 0;
+                const result = [];
+
+                for (const t of sortedTimes) {
+                    total += events[t];
+                    result.push([t, total]);
+                }
+
+                return result;
+            }
+
+            function saveInLocalStorage() {
+                localStorage.setItem("apiClientId", document.getElementById("apiClientId").value);
+                localStorage.setItem(
+                    "apiClientSecret",
+                    document.getElementById("apiClientSecret").value
+                );
+                localStorage.setItem("wclLink", document.getElementById("wclLink").value);
+            }
+
+            function loadFromLocalStorage() {
+                document.getElementById("apiClientId").value = localStorage.getItem("apiClientId");
+                document.getElementById("apiClientSecret").value =
+                    localStorage.getItem("apiClientSecret");
+                document.getElementById("wclLink").value = localStorage.getItem("wclLink");
+            }
+
+            function runAnalysis(name, fn) {
+                try {
+                    fn();
+                } catch (err) {
+                    console.error(`Error in ${name}:`, err);
+                }
+            }
+        </script>
+    </body>
+</html>
