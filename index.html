@@ -743,16 +743,18 @@
                         ? response.data.reportData.report.LBGraph.data.series
                         : response.data.reportData.report.NTGraph.data.series;
 
-                const bombGraphs = bombGraphsUnscaled
-                    .filter((x) => x.type == "Boss")
-                    .map((x) => ({ ...x, data: rescaleGraphTimeline(x.data) }));
+                const bombGraphs = bombGraphsUnscaled.map((x) => ({
+                    ...x,
+                    data: rescaleGraphTimeline(x.data),
+                }));
+                const bombBossGraphs = bombGraphs.filter((x) => x.type == "Boss");
 
                 const combinedBombGraph = sumStepFunctions(bombGraphs.map((x) => x.data));
 
                 // Bomb Clipping
                 const nBombsApplied = bombEvents.filter((x) => x.type == "applydebuff").length;
                 const nBombsClipped = bombEvents.filter((x) => x.type == "refreshdebuff").length;
-                const nBosses = bombGraphs.length;
+                const nBosses = bombBossGraphs.length;
                 const ratioBombsClipped = (
                     (100 * nBombsClipped) /
                     (nBombsClipped + nBombsApplied - nBosses)
@@ -779,7 +781,12 @@
                 const fightLength = (fightEndTime - fightStartTime) / 1000;
                 const bombUptimePercentage = ((100 * bombUptime) / fightLength).toFixed(1);
 
-                renderBombAnalysis(bombTalent, bombUptimePercentage, ratioBombsClipped, bombGraphs);
+                renderBombAnalysis(
+                    bombTalent,
+                    bombUptimePercentage,
+                    ratioBombsClipped,
+                    bombBossGraphs
+                );
             }
 
             function renderBombAnalysis(
