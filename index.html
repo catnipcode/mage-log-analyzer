@@ -202,6 +202,8 @@
 
             .analysis-element > h3 {
                 margin: 0;
+                line-height: 1.5;
+                font-size: 16px;
             }
 
             .chart-container {
@@ -209,7 +211,7 @@
                 margin-bottom: -7px;
                 position: relative;
                 width: 100%;
-                height: 110px;
+                height: 90px;
             }
 
             .hidden {
@@ -353,6 +355,7 @@
                 if (data.access_token) {
                     return data.access_token;
                 } else {
+                    stopLoadingAnimation();
                     alert("Failed to authenticate with Warcraft Logs. Check API key.");
                     throw new Error("Failed to authenticate with Warcraft Logs");
                 }
@@ -371,8 +374,7 @@
             }
 
             async function processWclLink() {
-                const analyzeLogButton = document.getElementById("analyze-log-btn");
-                analyzeLogButton.innerHTML = "<div class='spinner' />";
+                startLoadingAnimation();
 
                 apiClientId = document.getElementById("apiClientId").value;
                 apiClientSecret = document.getElementById("apiClientSecret").value;
@@ -383,6 +385,15 @@
                 // console.log(accessToken);
 
                 const fightInfoResponse = await fetchWCL(getWclLinkQuery(logId));
+
+                if (fightInfoResponse.errors?.length > 0) {
+                    stopLoadingAnimation();
+                    errorMessage =
+                        "Can't load log. Make sure the log is not set to private. Error message: " +
+                        fightInfoResponse?.errors[0].message;
+                    alert(errorMessage);
+                    throw new Error(errorMessage);
+                }
 
                 // Populate fights dropdown
                 const fightSelection = document.getElementById("fightId");
@@ -430,9 +441,8 @@
             }
 
             async function buildFullAnalysis() {
-                // Loading animation
-                const analyzeLogButton = document.getElementById("analyze-log-btn");
-                analyzeLogButton.innerHTML = "<div class='spinner' />";
+                startLoadingAnimation();
+
                 const fightId = document.getElementById("fightId").value;
                 const charId = document.getElementById("charId").value;
 
@@ -469,7 +479,7 @@
                 );
 
                 // Remove loading animation
-                analyzeLogButton.innerHTML = originalButtonText;
+                stopLoadingAnimation();
             }
 
             // Hit
@@ -492,18 +502,18 @@
 
                 if (totalHitValue > 5125) {
                     analysisElement.innerHTML += `
-                                  <h3>❌ Over hit cap: ${totalHitValue}</h3>
-                                  <p>Hit cap is 5100.</p>
-                              `;
+                                              <h3>❌ Over hit cap: ${totalHitValue}</h3>
+                                              <p>Hit cap is 5100.</p>
+                                          `;
                 } else if (totalHitValue < 5100) {
                     analysisElement.innerHTML += `
-                                  <h3>❌ Under hit cap: ${totalHitValue}</h3>
-                                  <p>Hit cap is 5100.</p>
-                              `;
+                                              <h3>❌ Under hit cap: ${totalHitValue}</h3>
+                                              <p>Hit cap is 5100.</p>
+                                          `;
                 } else {
                     analysisElement.innerHTML += `
-                                  <h3>✅ Hit Rating: ${totalHitValue}</h3>
-                              `;
+                                              <h3>✅ Hit Rating: ${totalHitValue}</h3>
+                                          `;
                 }
 
                 const resultsCol = document.getElementById("results-left-col");
@@ -552,13 +562,13 @@
 
                 if (nPotionsUsed < 2) {
                     analysisElement.innerHTML += `
-                                  <h3>❌ Potions used: ${nPotionsUsed}</h3>
-                                  <p>You should use 2 potions per fight.</p>
-                              `;
+                                              <h3>❌ Potions used: ${nPotionsUsed}</h3>
+                                              <p>You should use 2 potions per fight.</p>
+                                          `;
                 } else {
                     analysisElement.innerHTML += `
-                                  <h3>✅ Potions used: ${nPotionsUsed}</h3>
-                              `;
+                                              <h3>✅ Potions used: ${nPotionsUsed}</h3>
+                                          `;
                 }
 
                 if (potionGraph) {
@@ -625,18 +635,18 @@
 
                 if (t6UptimePercentage >= 95) {
                     analysisElement.innerHTML += `
-                                  <h3>✅ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
-                              `;
+                                              <h3>✅ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                          `;
                 } else if (t6UptimePercentage >= 90) {
                     analysisElement.innerHTML += `
-                                  <h3>⚠️ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
-                                  <p>Aim for 95%+ ${t6TalentName} uptime.</p>
-                              `;
+                                              <h3>⚠️ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                              <p>Aim for 95%+ ${t6TalentName} uptime.</p>
+                                          `;
                 } else {
                     analysisElement.innerHTML += `
-                                  <h3>❌ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
-                                  <p>Aim for 95%+ ${t6TalentName} uptime.</p>
-                              `;
+                                              <h3>❌ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                              <p>Aim for 95%+ ${t6TalentName} uptime.</p>
+                                          `;
                 }
 
                 if (t6Graph) {
@@ -687,19 +697,19 @@
 
                 if (nGlovesUsed >= chancesToUseGloves) {
                     analysisElement.innerHTML += `
-                                  <h3>✅ Gloves used: ${nGlovesUsed}</h3>
-                                  <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
-                                  `;
+                                              <h3>✅ Gloves used: ${nGlovesUsed}</h3>
+                                              <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
+                                              `;
                 } else if (nGlovesUsed == 0) {
                     analysisElement.innerHTML += `
-                                    <h3>❌ Gloves used: ${nGlovesUsed}</h3>
-                                    <p>You should consider becoming an engineer.</p>
-                                    `;
+                                                <h3>❌ Gloves used: ${nGlovesUsed}</h3>
+                                                <p>You should consider becoming an engineer.</p>
+                                                `;
                 } else {
                     analysisElement.innerHTML += `
-                                    <h3>❌ Gloves used: ${nGlovesUsed}</h3>
-                                    <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
-                              `;
+                                                <h3>❌ Gloves used: ${nGlovesUsed}</h3>
+                                                <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
+                                          `;
                 }
 
                 const canvas = document.createElement("canvas");
@@ -785,23 +795,23 @@
 
                 if (bombUptimePercentage >= 90) {
                     analysisElement.innerHTML += `
-                                  <h3>✅ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
-                                  `;
+                                              <h3>✅ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
+                                              `;
                 } else {
                     analysisElement.innerHTML += `
-                                    <h3>❌ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
-                                    `;
+                                                <h3>❌ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
+                                                `;
                 }
                 analysisElement.innerHTML += `<p></p>`;
                 if (ratioBombsClipped >= 50) {
                     analysisElement.innerHTML += `
-                                  <h3>✅ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
-                                  `;
+                                              <h3>✅ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
+                                              `;
                 } else {
                     analysisElement.innerHTML += `
-                                    <h3>❌ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
-                                    <p>You should clip your bombs. Type !bomb on Mage Discord to learn how. (You need to select a role first)</p>
-                                    `;
+                                                <h3>❌ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
+                                                <p>You should clip your bombs. Type !bomb on Mage Discord to learn how. (You need to select a role first)</p>
+                                                `;
                 }
 
                 for (const bossGraph of bombGraphs) {
@@ -940,18 +950,18 @@
 
                 if (totalUptimePercentage >= 93) {
                     analysisElement.innerHTML += `
-                                  <h3>✅ Total Casting Uptime: ${totalUptimePercentage}%</h3>
-                                  `;
+                                              <h3>✅ Total Casting Uptime: ${totalUptimePercentage}%</h3>
+                                              `;
                 } else if (totalUptimePercentage >= 88) {
                     analysisElement.innerHTML += `
-                                    <h3>⚠️ Total Casting Uptime: ${totalUptimePercentage}%</h3>
-                                    <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
-                                    `;
+                                                <h3>⚠️ Total Casting Uptime: ${totalUptimePercentage}%</h3>
+                                                <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                                                `;
                 } else {
                     analysisElement.innerHTML += `
-                                    <h3>❌ Total Casting Uptime: ${totalUptimePercentage}%</h3>
-                                    <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
-                              `;
+                                                <h3>❌ Total Casting Uptime: ${totalUptimePercentage}%</h3>
+                                                <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                                          `;
                 }
 
                 const canvas = document.createElement("canvas");
@@ -988,12 +998,12 @@
 
                 if (nBadIcelances == 0) {
                     analysisElement.innerHTML += `
-                        <h3>✅ Ice Lances without Fingers of Frost Proc: ${nBadIcelances}</h3>
-                    `;
+                                    <h3>✅ Ice Lances without FoF Proc: ${nBadIcelances}</h3>
+                                `;
                 } else {
                     analysisElement.innerHTML += `
-                        <h3>❌ Ice Lances without Fingers of Frost Proc: ${nBadIcelances}</h3>
-                    `;
+                                    <h3>❌ Ice Lances without FoF Proc: ${nBadIcelances}</h3>
+                                `;
                 }
 
                 const resultsCol = document.getElementById("results-left-col");
@@ -1004,152 +1014,152 @@
             function getWclLinkQuery(logId) {
                 return {
                     query: `
-                                  query {
-                                      reportData {
-                                          report(code: "${logId}") {
-                                              fights (killType: Encounters) {
-                                                  id
-                                                  name
-                                                  kill
+                                              query {
+                                                  reportData {
+                                                      report(code: "${logId}") {
+                                                          fights (killType: Encounters) {
+                                                              id
+                                                              name
+                                                              kill
+                                                          }
+                                                          rankedCharacters {
+                                                              id
+                                                              name
+                                                              classID
+                                                          }
+                                                      }
+                                                  }
                                               }
-                                              rankedCharacters {
-                                                  id
-                                                  name
-                                                  classID
-                                              }
-                                          }
-                                      }
-                                  }
-                              `,
+                                          `,
                 };
             }
 
             function getCharIdQuery(logId, fightId) {
                 return {
                     query: `
-                        query {
-                            reportData {
-                                report(code: "${logId}") {
-                                    playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
-                                }
-                            }
-                        }
-                    `,
+                                    query {
+                                        reportData {
+                                            report(code: "${logId}") {
+                                                playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
+                                            }
+                                        }
+                                    }
+                                `,
                 };
             }
 
             function getFightDetailsQuery(logId, fightId, charId) {
                 return {
                     query: `
-                        query {
-                            reportData {
-                                report(code: "${logId}") {
-                                    playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
-                                    fights (fightIDs:[${fightId}]) {
-                                        startTime
-                                        endTime
+                                    query {
+                                        reportData {
+                                            report(code: "${logId}") {
+                                                playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
+                                                fights (fightIDs:[${fightId}]) {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                potionEvents: events(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Buffs,
+                                                    abilityID: 105702
+                                                ) {
+                                                    data
+                                                }
+                                                potionGraph: graph(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Buffs,
+                                                    abilityID: 105702
+                                                )
+                                                evoGraph: graph(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Buffs,
+                                                    abilityID: 116257
+                                                )
+                                                runeGraph: graph(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Buffs,
+                                                    abilityID: 116014
+                                                )
+                                                glovesEvents: events(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Buffs,
+                                                    abilityID: 96230
+                                                ) {
+                                                    data
+                                                }
+                                                glovesGraph: graph(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Buffs,
+                                                    abilityID: 96230
+                                                )
+                                                LBEvents: events(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Debuffs,
+                                                    abilityID: 44457
+                                                ) {
+                                                    data
+                                                }
+                                                LBGraph: graph(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Debuffs,
+                                                    abilityID: 44457
+                                                )
+                                                NTEvents: events(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Debuffs,
+                                                    abilityID: 114923
+                                                ) {
+                                                    data
+                                                }
+                                                NTGraph: graph(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Debuffs,
+                                                    abilityID: 114923
+                                                )
+                                                castUptimeEvents: events(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Casts
+                                                ) {
+                                                    data
+                                                }
+                                                icelanceFoFEvents: events(
+                                                    fightIDs: [${fightId}],
+                                                    sourceID: ${charId},
+                                                    dataType: Casts,
+                                                    filterExpression: "type = 'cast' and ability.id = 30455 and not in range from type = 'applybuff' and ability.id = 44544 to type = 'removebuff' and ability.id = 44544 group by source end"
+                                                ) {
+                                                    data
+                                                }
+                                            }
+                                        }
                                     }
-                                    potionEvents: events(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Buffs,
-                                        abilityID: 105702
-                                    ) {
-                                        data
-                                    }
-                                    potionGraph: graph(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Buffs,
-                                        abilityID: 105702
-                                    )
-                                    evoGraph: graph(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Buffs,
-                                        abilityID: 116257
-                                    )
-                                    runeGraph: graph(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Buffs,
-                                        abilityID: 116014
-                                    )
-                                    glovesEvents: events(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Buffs,
-                                        abilityID: 96230
-                                    ) {
-                                        data
-                                    }
-                                    glovesGraph: graph(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Buffs,
-                                        abilityID: 96230
-                                    )
-                                    LBEvents: events(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Debuffs,
-                                        abilityID: 44457
-                                    ) {
-                                        data
-                                    }
-                                    LBGraph: graph(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Debuffs,
-                                        abilityID: 44457
-                                    )
-                                    NTEvents: events(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Debuffs,
-                                        abilityID: 114923
-                                    ) {
-                                        data
-                                    }
-                                    NTGraph: graph(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Debuffs,
-                                        abilityID: 114923
-                                    )
-                                    castUptimeEvents: events(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Casts
-                                    ) {
-                                        data
-                                    }
-                                    icelanceFoFEvents: events(
-                                        fightIDs: [${fightId}],
-                                        sourceID: ${charId},
-                                        dataType: Casts,
-                                        filterExpression: "type = 'cast' and ability.id = 30455 and not in range from type = 'applybuff' and ability.id = 44544 to type = 'removebuff' and ability.id = 44544 group by source end"
-                                    ) {
-                                        data
-                                    }
-                                }
-                            }
-                        }
-                    `,
+                                `,
                 };
             }
 
             function getCharListFromAllFightsQuery(logId, fightIds) {
                 return {
                     query: `
-                        query {
-                            reportData {
-                                report(code: "${logId}") {
-                                    playerDetails(fightIDs:[${fightIds}], includeCombatantInfo:true)
-                                }
-                            }
-                        }
-                    `,
+                                    query {
+                                        reportData {
+                                            report(code: "${logId}") {
+                                                playerDetails(fightIDs:[${fightIds}], includeCombatantInfo:true)
+                                            }
+                                        }
+                                    }
+                                `,
                 };
             }
 
@@ -1222,16 +1232,16 @@
                                 },
                                 grid: { display: false },
                                 border: { display: false },
-                                title: {
-                                    display: true,
-                                    text: "Fight Time", // Your label text
-                                    font: {
-                                        size: 12, // Small font size
-                                        family: "Arial",
-                                        weight: "normal",
-                                    },
-                                    padding: { bottom: 10 }, // Space between label and chart
-                                },
+                                // title: {
+                                //     display: true,
+                                //     text: "Fight Time", // Your label text
+                                //     font: {
+                                //         size: 12, // Small font size
+                                //         family: "Arial",
+                                //         weight: "normal",
+                                //     },
+                                //     padding: { bottom: 10 }, // Space between label and chart
+                                // },
                             },
                             y: {
                                 min: 0,
@@ -1246,12 +1256,19 @@
             }
 
             function getLogIdFromUrl(url) {
-                const regex = /\/reports\/([a-zA-Z0-9]+)/;
-                const logId = url.match(regex)[1];
-
+                let logId;
+                try {
+                    const regex = /\/reports\/([a-zA-Z0-9]+)/;
+                    logId = url.match(regex)[1];
+                } catch (err) {
+                    stopLoadingAnimation();
+                    alert("Can't read log link. Please enter a valid link to a report.");
+                    throw err;
+                }
                 if (logId) {
                     return logId;
                 } else {
+                    stopLoadingAnimation();
                     alert("Can't read Log URL");
                     throw new Error("Can't read Log URL");
                 }
@@ -1314,6 +1331,16 @@
                 } catch (err) {
                     console.error(`Error in ${name}:`, err);
                 }
+            }
+
+            function startLoadingAnimation() {
+                const analyzeLogButton = document.getElementById("analyze-log-btn");
+                analyzeLogButton.innerHTML = "<div class='spinner' />";
+            }
+
+            function stopLoadingAnimation() {
+                const analyzeLogButton = document.getElementById("analyze-log-btn");
+                analyzeLogButton.innerHTML = originalButtonText;
             }
         </script>
     </body>
