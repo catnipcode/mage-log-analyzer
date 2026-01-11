@@ -534,17 +534,17 @@
 
                 if (totalHitValue > 5130) {
                     analysisElement.innerHTML += `
-                        <h3>❌ Over hit cap: ${totalHitValue}</h3>
+                        <h3>❌ Over Hit (+Expertise) Cap: ${totalHitValue}</h3>
                         <p>Hit cap is 5100.</p>
                     `;
                 } else if (totalHitValue < 5100) {
                     analysisElement.innerHTML += `
-                        <h3>❌ Under hit cap: ${totalHitValue}</h3>
+                        <h3>❌ Under Hit (+Expertise) Cap: ${totalHitValue}</h3>
                         <p>Hit cap is 5100.</p>
                     `;
                 } else {
                     analysisElement.innerHTML += `
-                        <h3>✅ Hit Rating: ${totalHitValue}</h3>
+                        <h3>✅ Hit (+Expertise) Rating: ${totalHitValue}</h3>
                         <p></p>
                     `;
                 }
