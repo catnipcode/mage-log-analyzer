@@ -40,6 +40,7 @@
             }
 
             #title {
+                margin-left: 15px;
                 flex: 1;
             }
 
@@ -478,7 +479,7 @@
                 const charTalents = charDetails.combatantInfo.talents.map((x) => x.name);
                 const charSpec = charDetails.specs[0].spec;
 
-                runAnalysis("Hit", () => buildHitAnalysis(fightDetailsResponse, charId));
+                runAnalysis("Stats", () => buildStatsAnalysis(fightDetailsResponse, charId));
                 runAnalysis("Potion", () => buildPotionAnalysis(fightDetailsResponse));
                 runAnalysis("T6", () => buildT6Analysis(fightDetailsResponse, charTalents));
                 runAnalysis("Gloves", () => buildGlovesAnalysis(fightDetailsResponse));
@@ -494,8 +495,8 @@
                 stopLoadingAnimation();
             }
 
-            // Hit
-            function buildHitAnalysis(response, charId) {
+            // Stats and Enchants
+            function buildStatsAnalysis(response, charId) {
                 const charDetails =
                     response.data.reportData.report.playerDetails.data.playerDetails.dps.find(
                         (x) => x.id == charId
@@ -505,27 +506,57 @@
                     charDetails.combatantInfo.stats.Hit.min +
                     charDetails.combatantInfo.stats.Expertise.min;
 
-                renderHitAnalysis(totalHitValue);
+                const slotsWithEnchants = {
+                    2: "Shoulder",
+                    4: "Chest",
+                    6: "Legs",
+                    7: "Boots",
+                    8: "Bracers",
+                    9: "Gloves",
+                    15: "Main Hand",
+                    16: "Off Hand",
+                };
+                const gearslotsWithEnchants = charDetails.combatantInfo.gear
+                    .filter((x) => x.id != 0) // Filter out empty slots (e.g. Offhand)
+                    .filter((x) => Object.keys(slotsWithEnchants).includes(x.slot.toString()));
+                // .map((x) => x.permanentEnchant);
+                const missingEnchants = gearslotsWithEnchants
+                    .filter((x) => x.permanentEnchant == undefined)
+                    .map((x) => x.slot)
+                    .map((i) => slotsWithEnchants[i]);
+
+                renderStatsAnalysis(totalHitValue, missingEnchants);
             }
 
-            function renderHitAnalysis(totalHitValue) {
+            function renderStatsAnalysis(totalHitValue, missingEnchants) {
                 let analysisElement = document.createElement("div");
                 analysisElement.classList.add("analysis-element");
 
-                if (totalHitValue > 5125) {
+                if (totalHitValue > 5130) {
                     analysisElement.innerHTML += `
-                                              <h3>❌ Over hit cap: ${totalHitValue}</h3>
-                                              <p>Hit cap is 5100.</p>
-                                          `;
+                        <h3>❌ Over hit cap: ${totalHitValue}</h3>
+                        <p>Hit cap is 5100.</p>
+                    `;
                 } else if (totalHitValue < 5100) {
                     analysisElement.innerHTML += `
-                                              <h3>❌ Under hit cap: ${totalHitValue}</h3>
-                                              <p>Hit cap is 5100.</p>
-                                          `;
+                        <h3>❌ Under hit cap: ${totalHitValue}</h3>
+                        <p>Hit cap is 5100.</p>
+                    `;
                 } else {
                     analysisElement.innerHTML += `
-                                              <h3>✅ Hit Rating: ${totalHitValue}</h3>
-                                          `;
+                        <h3>✅ Hit Rating: ${totalHitValue}</h3>
+                        <p></p>
+                    `;
+                }
+
+                if (missingEnchants.length == 0) {
+                    analysisElement.innerHTML += `
+                        <h3>✅ No missing enchants</h3>
+                    `;
+                } else {
+                    analysisElement.innerHTML += `
+                        <h3>❌ Missing Enchants: ${missingEnchants.join(", ")}</h3>
+                    `;
                 }
 
                 const resultsCol = document.getElementById("results-left-col");
@@ -691,12 +722,16 @@
                 }
 
                 const glovesGraphUnscaled =
-                    response.data.reportData.report.glovesGraph.data.series[0].data;
-                const glovesGraph = rescaleGraphTimeline(glovesGraphUnscaled);
+                    response.data.reportData.report.glovesGraph.data.series[0]?.data;
+                const glovesGraph = glovesGraphUnscaled
+                    ? rescaleGraphTimeline(glovesGraphUnscaled)
+                    : undefined;
 
-                const chancesToUseGloves = Math.ceil(
-                    (0.85 * (glovesGraph[glovesGraph.length - 1][0] - 15)) / 60
-                );
+                const fightStartTime = response.data.reportData.report.fights[0].startTime;
+                const fightEndTime = response.data.reportData.report.fights[0].endTime;
+                const fightLength = (fightEndTime - fightStartTime) / 1000;
+
+                const chancesToUseGloves = Math.ceil((0.85 * fightLength - 15) / 60);
 
                 renderGlovesAnalysis(nGlovesUsed, glovesGraph, chancesToUseGloves);
             }
@@ -724,15 +759,16 @@
                                           `;
                 }
 
-                const canvas = document.createElement("canvas");
-                renderStepFunction(glovesGraph, canvas, "#0f8fc0");
+                if (glovesGraph) {
+                    const canvas = document.createElement("canvas");
+                    renderStepFunction(glovesGraph, canvas, "#0f8fc0");
 
-                let chartContainer = document.createElement("div");
-                chartContainer.classList.add("chart-container");
+                    let chartContainer = document.createElement("div");
+                    chartContainer.classList.add("chart-container");
 
-                chartContainer.appendChild(canvas);
-                analysisElement.append(chartContainer);
-
+                    chartContainer.appendChild(canvas);
+                    analysisElement.append(chartContainer);
+                }
                 resultsCol.appendChild(analysisElement);
             }
 
@@ -856,11 +892,23 @@
                 const fightEndTime = response.data.reportData.report.fights[0].endTime;
                 const fightLength = (fightEndTime - fightStartTime) / 1000;
 
-                const castingUptimeEvents =
-                    response.data.reportData.report.castUptimeEvents.data.map((x) => ({
+                // Filter out spells that are off GCD
+                const offGCDSpellIds = [
+                    126734, // Gloves
+                    108839, // Ice FLoes
+                    108978, // AT
+                    5405, // Mana Gem
+                    105702, // Potion
+                    115610, // Temporal Shield
+                    80353, // Time Warp
+                ];
+
+                const castingUptimeEvents = response.data.reportData.report.castUptimeEvents.data
+                    .map((x) => ({
                         ...x,
                         timestamp: (x.timestamp - fightStartTime) / 1000,
-                    }));
+                    }))
+                    .filter((x) => !offGCDSpellIds.includes(x.abilityGameID));
                 // Add Fight Start and End event
                 castingUptimeEvents.unshift({
                     type: "fightstart",
@@ -965,10 +1013,14 @@
                 const totalDowntime = fightLength - totalUptime;
                 const totalDowntimePercentage = ((100 * totalDowntime) / fightLength).toFixed(1);
 
-                renderCastingUptimeAnalysis(totalDowntimePercentage, downtimeGraph);
+                renderCastingUptimeAnalysis(totalDowntime, totalDowntimePercentage, downtimeGraph);
             }
 
-            function renderCastingUptimeAnalysis(totalDowntimePercentage, cleanCastingUptimeGraph) {
+            function renderCastingUptimeAnalysis(
+                totalDowntime,
+                totalDowntimePercentage,
+                cleanCastingUptimeGraph
+            ) {
                 const resultsCol = document.getElementById("results-right-col");
 
                 let analysisElement = document.createElement("div");
@@ -976,16 +1028,22 @@
 
                 if (totalDowntimePercentage <= 7) {
                     analysisElement.innerHTML += `
-                        <h3>✅ Total Casting Downtime: ${totalDowntimePercentage}%</h3>
+                        <h3>✅ Total Casting Downtime: ${totalDowntime.toFixed(
+                            0
+                        )}s (${totalDowntimePercentage}%)</h3>
                         `;
                 } else if (totalDowntimePercentage <= 12) {
                     analysisElement.innerHTML += `
-                        <h3>⚠️ Total Casting Downtime: ${totalDowntimePercentage}%</h3>
+                        <h3>⚠️ Total Casting Downtime: ${totalDowntime.toFixed(
+                            0
+                        )}s (${totalDowntimePercentage}%)</h3>
                         <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
                         `;
                 } else {
                     analysisElement.innerHTML += `
-                        <h3>❌ Total Casting Downtime: ${totalDowntimePercentage}%</h3>
+                        <h3>❌ Total Casting Downtime: ${totalDowntime.toFixed(
+                            0
+                        )}s (${totalDowntimePercentage}%)</h3>
                         <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
                     `;
                 }
