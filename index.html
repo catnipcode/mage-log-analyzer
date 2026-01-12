@@ -126,6 +126,10 @@
                 margin-bottom: 8px;
             }
 
+            .red-text {
+                color: lightcoral !important;
+            }
+
             input[type="text"],
             input[type="password"],
             select {
@@ -295,7 +299,7 @@
                         <input
                             type="text"
                             id="wclLink"
-                            oninput="saveInLocalStorage()"
+                            oninput="onEditFields()"
                             placeholder="e.g. https://classic.warcraftlogs.com/reports/X3nApTFtzVdRW1aL"
                         />
                     </div>
@@ -303,18 +307,18 @@
                 <div id="api-credentials-wrapper">
                     <div class="input-group">
                         <label>API Client ID</label>
-                        <input type="text" id="apiClientId" oninput="saveInLocalStorage()" />
+                        <input type="text" id="apiClientId" oninput="onEditFields()" />
                     </div>
                     <div class="input-group">
                         <label>API Client Secret</label>
-                        <input
-                            type="password"
-                            id="apiClientSecret"
-                            oninput="saveInLocalStorage()"
-                        />
+                        <input type="password" id="apiClientSecret" oninput="onEditFields()" />
                     </div>
-                    <a href="https://classic.warcraftlogs.com/api/clients/" target="_blank"
-                        >Click here to create your API client id and and secret</a
+                    <a
+                        id="link-get-your-api"
+                        class="red-text"
+                        href="https://classic.warcraftlogs.com/api/clients/"
+                        target="_blank"
+                        >Click here to create your API client id and secret</a
                     >
                 </div>
                 <button id="analyze-log-btn" onclick="processWclLink()">Analyze Log</button>
@@ -351,7 +355,7 @@
         </div>
         <script>
             //Run this on page load
-            loadFromLocalStorage();
+            onLoad();
             originalButtonText = document.getElementById("analyze-log-btn").innerHTML;
 
             async function getAccessToken() {
@@ -369,7 +373,12 @@
                     return data.access_token;
                 } else {
                     stopLoadingAnimation();
-                    alert("Failed to authenticate with Warcraft Logs. Check API key.");
+                    alert(
+                        `Failed to authenticate with Warcraft Logs. Check API key.
+
+Make sure you used the link under the input fields to create your API key.
+Make sure you entered the client ID and secret (not the name).`
+                    );
                     throw new Error("Failed to authenticate with Warcraft Logs");
                 }
             }
@@ -1391,6 +1400,28 @@
                 }
 
                 return result;
+            }
+
+            function onLoad() {
+                loadFromLocalStorage();
+                toggleRedTextApiLink();
+            }
+
+            function onEditFields() {
+                toggleRedTextApiLink();
+                saveInLocalStorage();
+            }
+
+            function toggleRedTextApiLink() {
+                const inputApiClientId = document.getElementById("apiClientId");
+                const inputApiClientSecret = document.getElementById("apiClientSecret");
+                const elementLinkGetYourApi = document.getElementById("link-get-your-api");
+
+                if (inputApiClientId.value == "" && inputApiClientSecret.value == "") {
+                    elementLinkGetYourApi.classList.add("red-text");
+                } else {
+                    elementLinkGetYourApi.classList.remove("red-text");
+                }
             }
 
             function saveInLocalStorage() {
