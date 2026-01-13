@@ -8,3 +8,5 @@ This simple web app analyzes your Warcraftlogs Log and gives suggestions on how 
 - Evocation/Rune of Power uptime
 - Gloves usage
 - ...
+
+Visit https://catnipcode.github.io/mage-log-analyzer/ to use the web app.
