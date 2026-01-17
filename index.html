@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -19,7 +19,10 @@
             body {
                 background-color: var(--bg-color);
                 color: var(--text-main);
-                font-family: "Inter", -apple-system, sans-serif;
+                font-family:
+                    "Inter",
+                    -apple-system,
+                    sans-serif;
                 margin: 0;
                 padding: 24px;
             }
@@ -306,11 +309,16 @@
                 </div>
                 <div id="api-credentials-wrapper">
                     <div class="input-group">
-                        <label>API Client ID</label>
-                        <input type="text" id="apiClientId" oninput="onEditFields()" />
+                        <label>API Client ID (V2)</label>
+                        <input
+                            type="text"
+                            id="apiClientId"
+                            oninput="onEditFields()"
+                            placeholder="Click Link below! Do not google it!"
+                        />
                     </div>
                     <div class="input-group">
-                        <label>API Client Secret</label>
+                        <label>API Client Secret (V2)</label>
                         <input type="password" id="apiClientSecret" oninput="onEditFields()" />
                     </div>
                     <a
@@ -377,7 +385,7 @@
                         `Failed to authenticate with Warcraft Logs. Check API key.
 
 Make sure you used the link under the input fields to create your API key.
-Make sure you entered the client ID and secret (not the name).`
+Make sure you entered the client ID and secret (not the name).`,
                     );
                     throw new Error("Failed to authenticate with Warcraft Logs");
                 }
@@ -436,7 +444,7 @@ Make sure you entered the client ID and secret (not the name).`
                 // Populate char dropdown with mages
                 const fightIds = fightInfoResponse.data.reportData.report.fights.map((x) => x.id);
                 const charListResponse = await fetchWCL(
-                    getCharListFromAllFightsQuery(logId, fightIds)
+                    getCharListFromAllFightsQuery(logId, fightIds),
                 );
 
                 const chars =
@@ -470,7 +478,7 @@ Make sure you entered the client ID and secret (not the name).`
 
                 // Get big API response with everything
                 const fightDetailsResponse = await fetchWCL(
-                    getFightDetailsQuery(logId, fightId, charId)
+                    getFightDetailsQuery(logId, fightId, charId),
                 );
 
                 document.getElementById("results-left-col").innerHTML = "";
@@ -479,7 +487,7 @@ Make sure you entered the client ID and secret (not the name).`
                 // Check if char was in selected fight
                 const charDetails =
                     fightDetailsResponse.data.reportData.report.playerDetails.data.playerDetails.dps.find(
-                        (x) => x.id == charId
+                        (x) => x.id == charId,
                     );
                 if (charDetails == undefined) {
                     return;
@@ -493,11 +501,11 @@ Make sure you entered the client ID and secret (not the name).`
                 runAnalysis("T6", () => buildT6Analysis(fightDetailsResponse, charTalents));
                 runAnalysis("Gloves", () => buildGlovesAnalysis(fightDetailsResponse));
                 runAnalysis("IcelanceFoF", () =>
-                    buildIcelanceFoFAnalysis(fightDetailsResponse, charSpec)
+                    buildIcelanceFoFAnalysis(fightDetailsResponse, charSpec),
                 );
                 runAnalysis("Bomb", () => buildBombAnalysis(fightDetailsResponse, charTalents));
                 runAnalysis("Uptime", () =>
-                    buildCastingUptimeAnalysis(fightDetailsResponse, charId)
+                    buildCastingUptimeAnalysis(fightDetailsResponse, charId),
                 );
 
                 // Remove loading animation
@@ -508,7 +516,7 @@ Make sure you entered the client ID and secret (not the name).`
             function buildStatsAnalysis(response, charId) {
                 const charDetails =
                     response.data.reportData.report.playerDetails.data.playerDetails.dps.find(
-                        (x) => x.id == charId
+                        (x) => x.id == charId,
                     );
 
                 const totalHitValue =
@@ -642,8 +650,8 @@ Make sure you entered the client ID and secret (not the name).`
                 const t6Talent = charTalents.includes("Invocation")
                     ? "evo"
                     : charTalents.includes("Rune of Power")
-                    ? "rune"
-                    : null;
+                      ? "rune"
+                      : null;
                 if (!t6Talent) return;
 
                 // const t6Events = response.data.reportData.report[t6Talent + "Events"].data;
@@ -786,8 +794,8 @@ Make sure you entered the client ID and secret (not the name).`
                 const bombTalent = charTalents.includes("Living Bomb")
                     ? "Living Bomb"
                     : charTalents.includes("Nether Tempest")
-                    ? "Nether Tempest"
-                    : null;
+                      ? "Nether Tempest"
+                      : null;
                 if (!bombTalent) return;
 
                 const bombEvents =
@@ -842,7 +850,7 @@ Make sure you entered the client ID and secret (not the name).`
                     bombTalent,
                     bombUptimePercentage,
                     ratioBombsClipped,
-                    bombBossGraphs
+                    bombBossGraphs,
                 );
             }
 
@@ -850,7 +858,7 @@ Make sure you entered the client ID and secret (not the name).`
                 bombTalent,
                 bombUptimePercentage,
                 ratioBombsClipped,
-                bombGraphs
+                bombGraphs,
             ) {
                 const resultsCol = document.getElementById("results-left-col");
 
@@ -931,7 +939,7 @@ Make sure you entered the client ID and secret (not the name).`
                 // Calculate conservative max GCD
                 const charDetails =
                     response.data.reportData.report.playerDetails.data.playerDetails.dps.find(
-                        (x) => x.id == charId
+                        (x) => x.id == charId,
                     );
                 const hasteValue = charDetails.combatantInfo.stats.Haste.min;
                 const maxGCD = Math.max(1.5 / (1 + hasteValue / 42500), 1);
@@ -993,12 +1001,12 @@ Make sure you entered the client ID and secret (not the name).`
 
                 // Remove steps that happen faster than 0.1s
                 const castingUptimeStepSizes = castingUptimeGraph.map((x, i, steps) =>
-                    i == steps.length - 1 ? 10 : steps[i + 1][0] - steps[i][0]
+                    i == steps.length - 1 ? 10 : steps[i + 1][0] - steps[i][0],
                 );
                 const castingUptimeFilterMask = castingUptimeStepSizes.map((x) => x > 0.1);
 
                 const cleanCastingUptimeGraph = castingUptimeGraph.filter(
-                    (x, i) => castingUptimeFilterMask[i]
+                    (x, i) => castingUptimeFilterMask[i],
                 );
 
                 // Calculate Uptime
@@ -1028,7 +1036,7 @@ Make sure you entered the client ID and secret (not the name).`
             function renderCastingUptimeAnalysis(
                 totalDowntime,
                 totalDowntimePercentage,
-                cleanCastingUptimeGraph
+                cleanCastingUptimeGraph,
             ) {
                 const resultsCol = document.getElementById("results-right-col");
 
@@ -1038,20 +1046,20 @@ Make sure you entered the client ID and secret (not the name).`
                 if (totalDowntimePercentage <= 7) {
                     analysisElement.innerHTML += `
                         <h3>✅ Total Casting Downtime: ${totalDowntime.toFixed(
-                            0
+                            0,
                         )}s (${totalDowntimePercentage}%)</h3>
                         `;
                 } else if (totalDowntimePercentage <= 12) {
                     analysisElement.innerHTML += `
                         <h3>⚠️ Total Casting Downtime: ${totalDowntime.toFixed(
-                            0
+                            0,
                         )}s (${totalDowntimePercentage}%)</h3>
                         <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
                         `;
                 } else {
                     analysisElement.innerHTML += `
                         <h3>❌ Total Casting Downtime: ${totalDowntime.toFixed(
-                            0
+                            0,
                         )}s (${totalDowntimePercentage}%)</h3>
                         <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
                     `;
@@ -1428,7 +1436,7 @@ Make sure you entered the client ID and secret (not the name).`
                 localStorage.setItem("apiClientId", document.getElementById("apiClientId").value);
                 localStorage.setItem(
                     "apiClientSecret",
-                    document.getElementById("apiClientSecret").value
+                    document.getElementById("apiClientSecret").value,
                 );
                 localStorage.setItem("wclLink", document.getElementById("wclLink").value);
             }
