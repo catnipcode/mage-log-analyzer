@@ -83,15 +83,24 @@
                 gap: 5px 20px;
             }
 
-            #api-credentials-wrapper a,
             #footer a {
                 grid-column: span 2;
                 color: var(--text-muted);
                 font-size: 12px;
                 text-decoration: none;
             }
-            #api-credentials-wrapper a:hover,
             #footer a:hover {
+                text-decoration: underline;
+            }
+
+            #api-credentials-wrapper a {
+                grid-column: span 2;
+                color: var(--text-muted);
+                font-size: 14px;
+                text-decoration: none;
+            }
+
+            #api-credentials-wrapper a:hover {
                 text-decoration: underline;
             }
 
@@ -131,6 +140,7 @@
 
             .red-text {
                 color: lightcoral !important;
+                text-decoration: underline !important;
             }
 
             input[type="text"],
@@ -309,16 +319,16 @@
                 </div>
                 <div id="api-credentials-wrapper">
                     <div class="input-group">
-                        <label>API Client ID (V2)</label>
+                        <label>API Client ID</label>
                         <input
                             type="text"
                             id="apiClientId"
                             oninput="onEditFields()"
-                            placeholder="Click Link below! Do not google it!"
+                            placeholder="Click Link below to get API credentials"
                         />
                     </div>
                     <div class="input-group">
-                        <label>API Client Secret (V2)</label>
+                        <label>API Client Secret</label>
                         <input type="password" id="apiClientSecret" oninput="onEditFields()" />
                     </div>
                     <a
