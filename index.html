@@ -394,8 +394,8 @@
                     alert(
                         `Failed to authenticate with Warcraft Logs. Check API key.
 
-Make sure you used the link under the input fields to create your API key.
-Make sure you entered the client ID and secret (not the name).`,
+            Make sure you used the link under the input fields to create your API key.
+            Make sure you entered the client ID and secret (not the name).`,
                     );
                     throw new Error("Failed to authenticate with Warcraft Logs");
                 }
@@ -485,6 +485,10 @@ Make sure you entered the client ID and secret (not the name).`,
 
                 const fightId = document.getElementById("fightId").value;
                 const charId = document.getElementById("charId").value;
+                const charName =
+                    document.getElementById("charId").options[
+                        document.getElementById("charId").selectedIndex
+                    ].text;
 
                 // Get big API response with everything
                 const fightDetailsResponse = await fetchWCL(
@@ -506,7 +510,9 @@ Make sure you entered the client ID and secret (not the name).`,
                 const charTalents = charDetails.combatantInfo.talents.map((x) => x.name);
                 const charSpec = charDetails.specs[0].spec;
 
-                runAnalysis("Stats", () => buildStatsAnalysis(fightDetailsResponse, charId));
+                runAnalysis("Stats", () =>
+                    buildStatsAnalysis(fightDetailsResponse, charId, charName),
+                );
                 runAnalysis("Potion", () => buildPotionAnalysis(fightDetailsResponse));
                 runAnalysis("T6", () => buildT6Analysis(fightDetailsResponse, charTalents));
                 runAnalysis("Gloves", () => buildGlovesAnalysis(fightDetailsResponse));
@@ -523,7 +529,7 @@ Make sure you entered the client ID and secret (not the name).`,
             }
 
             // Stats and Enchants
-            function buildStatsAnalysis(response, charId) {
+            function buildStatsAnalysis(response, charId, charName) {
                 const charDetails =
                     response.data.reportData.report.playerDetails.data.playerDetails.dps.find(
                         (x) => x.id == charId,
@@ -552,38 +558,45 @@ Make sure you entered the client ID and secret (not the name).`,
                     .map((x) => x.slot)
                     .map((i) => slotsWithEnchants[i]);
 
-                renderStatsAnalysis(totalHitValue, missingEnchants);
+                renderStatsAnalysis(totalHitValue, missingEnchants, charName);
             }
 
-            function renderStatsAnalysis(totalHitValue, missingEnchants) {
+            function renderStatsAnalysis(totalHitValue, missingEnchants, charName) {
                 let analysisElement = document.createElement("div");
                 analysisElement.classList.add("analysis-element");
 
+                const specialNames = ["Dellebelfine"];
+                if (specialNames.includes(charName)) {
+                    analysisElement.innerHTML += `
+                                    <h3>⭐ Whatever this report says, gg and next week you'll be pumping DPS even harder!</h3>
+                                    <p></p>
+                                `;
+                }
                 if (totalHitValue > 5130) {
                     analysisElement.innerHTML += `
-                        <h3>❌ Over Hit (+Expertise) Cap: ${totalHitValue}</h3>
-                        <p>Hit cap is 5100.</p>
-                    `;
+                                    <h3>❌ Over Hit (+Expertise) Cap: ${totalHitValue}</h3>
+                                    <p>Hit cap is 5100.</p>
+                                `;
                 } else if (totalHitValue < 5100) {
                     analysisElement.innerHTML += `
-                        <h3>❌ Under Hit (+Expertise) Cap: ${totalHitValue}</h3>
-                        <p>Hit cap is 5100.</p>
-                    `;
+                                    <h3>❌ Under Hit (+Expertise) Cap: ${totalHitValue}</h3>
+                                    <p>Hit cap is 5100.</p>
+                                `;
                 } else {
                     analysisElement.innerHTML += `
-                        <h3>✅ Hit (+Expertise) Rating: ${totalHitValue}</h3>
-                        <p></p>
-                    `;
+                                    <h3>✅ Hit (+Expertise) Rating: ${totalHitValue}</h3>
+                                    <p></p>
+                                `;
                 }
 
                 if (missingEnchants.length == 0) {
                     analysisElement.innerHTML += `
-                        <h3>✅ No missing enchants</h3>
-                    `;
+                                    <h3>✅ No missing enchants</h3>
+                                `;
                 } else {
                     analysisElement.innerHTML += `
-                        <h3>❌ Missing Enchants: ${missingEnchants.join(", ")}</h3>
-                    `;
+                                    <h3>❌ Missing Enchants: ${missingEnchants.join(", ")}</h3>
+                                `;
                 }
 
                 const resultsCol = document.getElementById("results-left-col");
@@ -632,13 +645,13 @@ Make sure you entered the client ID and secret (not the name).`,
 
                 if (nPotionsUsed < 2) {
                     analysisElement.innerHTML += `
-                                              <h3>❌ Potions used: ${nPotionsUsed}</h3>
-                                              <p>You should use 2 potions per fight.</p>
-                                          `;
+                                                          <h3>❌ Potions used: ${nPotionsUsed}</h3>
+                                                          <p>You should use 2 potions per fight.</p>
+                                                      `;
                 } else {
                     analysisElement.innerHTML += `
-                                              <h3>✅ Potions used: ${nPotionsUsed}</h3>
-                                          `;
+                                                          <h3>✅ Potions used: ${nPotionsUsed}</h3>
+                                                      `;
                 }
 
                 if (potionGraph) {
@@ -705,18 +718,18 @@ Make sure you entered the client ID and secret (not the name).`,
 
                 if (t6UptimePercentage >= 95) {
                     analysisElement.innerHTML += `
-                                              <h3>✅ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
-                                          `;
+                                                          <h3>✅ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                                      `;
                 } else if (t6UptimePercentage >= 90) {
                     analysisElement.innerHTML += `
-                                              <h3>⚠️ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
-                                              <p>Aim for 95%+ ${t6TalentName} uptime.</p>
-                                          `;
+                                                          <h3>⚠️ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                                          <p>Aim for 95%+ ${t6TalentName} uptime.</p>
+                                                      `;
                 } else {
                     analysisElement.innerHTML += `
-                                              <h3>❌ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
-                                              <p>Aim for 95%+ ${t6TalentName} uptime.</p>
-                                          `;
+                                                          <h3>❌ ${t6TalentName} Uptime: ${t6UptimePercentage}%</h3>
+                                                          <p>Aim for 95%+ ${t6TalentName} uptime.</p>
+                                                      `;
                 }
 
                 if (t6Graph) {
@@ -771,19 +784,19 @@ Make sure you entered the client ID and secret (not the name).`,
 
                 if (nGlovesUsed >= chancesToUseGloves) {
                     analysisElement.innerHTML += `
-                                              <h3>✅ Gloves used: ${nGlovesUsed}</h3>
-                                              <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
-                                              `;
+                                                          <h3>✅ Gloves used: ${nGlovesUsed}</h3>
+                                                          <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
+                                                          `;
                 } else if (nGlovesUsed == 0) {
                     analysisElement.innerHTML += `
-                                                <h3>❌ Gloves used: ${nGlovesUsed}</h3>
-                                                <p>You should consider becoming an engineer.</p>
-                                                `;
+                                                            <h3>❌ Gloves used: ${nGlovesUsed}</h3>
+                                                            <p>You should consider becoming an engineer.</p>
+                                                            `;
                 } else {
                     analysisElement.innerHTML += `
-                                                <h3>❌ Gloves used: ${nGlovesUsed}</h3>
-                                                <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
-                                          `;
+                                                            <h3>❌ Gloves used: ${nGlovesUsed}</h3>
+                                                            <p>You had at least ${chancesToUseGloves} chances to use your gloves in this fight.</p>
+                                                      `;
                 }
 
                 if (glovesGraph) {
@@ -877,23 +890,27 @@ Make sure you entered the client ID and secret (not the name).`,
 
                 if (bombUptimePercentage >= 90) {
                     analysisElement.innerHTML += `
-                                              <h3>✅ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
-                                              `;
+                                                          <h3>✅ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
+                                                          `;
                 } else {
                     analysisElement.innerHTML += `
-                                                <h3>❌ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
-                                                `;
+                                                            <h3>❌ ${bombTalent} Uptime: ${bombUptimePercentage}%</h3>
+                                                            `;
                 }
-                analysisElement.innerHTML += `<p></p>`;
-                if (ratioBombsClipped >= 50) {
-                    analysisElement.innerHTML += `
-                                              <h3>✅ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
-                                              `;
-                } else {
-                    analysisElement.innerHTML += `
-                                                <h3>❌ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
-                                                <p>You should clip your bombs. Type !bomb on Mage Discord to learn how. (You need to select a role first)</p>
-                                                `;
+
+                // Only render bomb clipping for LB, not for NT
+                if (bombTalent == "Living Bomb") {
+                    analysisElement.innerHTML += `<p></p>`;
+                    if (ratioBombsClipped >= 50) {
+                        analysisElement.innerHTML += `
+                                                          <h3>✅ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
+                                                          `;
+                    } else {
+                        analysisElement.innerHTML += `
+                                                            <h3>❌ ${bombTalent} clipped: ${ratioBombsClipped}%</h3>
+                                                            <p>You should clip your bombs. Type !bomb on Mage Discord to learn how. (You need to select a role first)</p>
+                                                            `;
+                    }
                 }
 
                 for (const bossGraph of bombGraphs) {
@@ -1055,24 +1072,24 @@ Make sure you entered the client ID and secret (not the name).`,
 
                 if (totalDowntimePercentage <= 7) {
                     analysisElement.innerHTML += `
-                        <h3>✅ Total Casting Downtime: ${totalDowntime.toFixed(
-                            0,
-                        )}s (${totalDowntimePercentage}%)</h3>
-                        `;
+                                    <h3>✅ Total Casting Downtime: ${totalDowntime.toFixed(
+                                        0,
+                                    )}s (${totalDowntimePercentage}%)</h3>
+                                    `;
                 } else if (totalDowntimePercentage <= 12) {
                     analysisElement.innerHTML += `
-                        <h3>⚠️ Total Casting Downtime: ${totalDowntime.toFixed(
-                            0,
-                        )}s (${totalDowntimePercentage}%)</h3>
-                        <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
-                        `;
+                                    <h3>⚠️ Total Casting Downtime: ${totalDowntime.toFixed(
+                                        0,
+                                    )}s (${totalDowntimePercentage}%)</h3>
+                                    <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                                    `;
                 } else {
                     analysisElement.innerHTML += `
-                        <h3>❌ Total Casting Downtime: ${totalDowntime.toFixed(
-                            0,
-                        )}s (${totalDowntimePercentage}%)</h3>
-                        <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
-                    `;
+                                    <h3>❌ Total Casting Downtime: ${totalDowntime.toFixed(
+                                        0,
+                                    )}s (${totalDowntimePercentage}%)</h3>
+                                    <p>Avoid casting downtime as much as possible. ABC = Always be casting!</p>
+                                `;
                 }
 
                 const canvas = document.createElement("canvas");
@@ -1109,12 +1126,12 @@ Make sure you entered the client ID and secret (not the name).`,
 
                 if (nBadIcelances == 0) {
                     analysisElement.innerHTML += `
-                                    <h3>✅ Ice Lances without FoF Proc: ${nBadIcelances}</h3>
-                                `;
+                                                <h3>✅ Ice Lances without FoF Proc: ${nBadIcelances}</h3>
+                                            `;
                 } else {
                     analysisElement.innerHTML += `
-                                    <h3>❌ Ice Lances without FoF Proc: ${nBadIcelances}</h3>
-                                `;
+                                                <h3>❌ Ice Lances without FoF Proc: ${nBadIcelances}</h3>
+                                            `;
                 }
 
                 const resultsCol = document.getElementById("results-left-col");
@@ -1125,152 +1142,152 @@ Make sure you entered the client ID and secret (not the name).`,
             function getWclLinkQuery(logId) {
                 return {
                     query: `
-                                              query {
-                                                  reportData {
-                                                      report(code: "${logId}") {
-                                                          fights (killType: Encounters) {
-                                                              id
-                                                              name
-                                                              kill
+                                                          query {
+                                                              reportData {
+                                                                  report(code: "${logId}") {
+                                                                      fights (killType: Encounters) {
+                                                                          id
+                                                                          name
+                                                                          kill
+                                                                      }
+                                                                      rankedCharacters {
+                                                                          id
+                                                                          name
+                                                                          classID
+                                                                      }
+                                                                  }
+                                                              }
                                                           }
-                                                          rankedCharacters {
-                                                              id
-                                                              name
-                                                              classID
-                                                          }
-                                                      }
-                                                  }
-                                              }
-                                          `,
+                                                      `,
                 };
             }
 
             function getCharIdQuery(logId, fightId) {
                 return {
                     query: `
-                                    query {
-                                        reportData {
-                                            report(code: "${logId}") {
-                                                playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
-                                            }
-                                        }
-                                    }
-                                `,
+                                                query {
+                                                    reportData {
+                                                        report(code: "${logId}") {
+                                                            playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
+                                                        }
+                                                    }
+                                                }
+                                            `,
                 };
             }
 
             function getFightDetailsQuery(logId, fightId, charId) {
                 return {
                     query: `
-                                    query {
-                                        reportData {
-                                            report(code: "${logId}") {
-                                                playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
-                                                fights (fightIDs:[${fightId}]) {
-                                                    startTime
-                                                    endTime
+                                                query {
+                                                    reportData {
+                                                        report(code: "${logId}") {
+                                                            playerDetails(fightIDs:[${fightId}], includeCombatantInfo:true)
+                                                            fights (fightIDs:[${fightId}]) {
+                                                                startTime
+                                                                endTime
+                                                            }
+                                                            potionEvents: events(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Buffs,
+                                                                abilityID: 105702
+                                                            ) {
+                                                                data
+                                                            }
+                                                            potionGraph: graph(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Buffs,
+                                                                abilityID: 105702
+                                                            )
+                                                            evoGraph: graph(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Buffs,
+                                                                abilityID: 116257
+                                                            )
+                                                            runeGraph: graph(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Buffs,
+                                                                abilityID: 116014
+                                                            )
+                                                            glovesEvents: events(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Buffs,
+                                                                abilityID: 96230
+                                                            ) {
+                                                                data
+                                                            }
+                                                            glovesGraph: graph(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Buffs,
+                                                                abilityID: 96230
+                                                            )
+                                                            LBEvents: events(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Debuffs,
+                                                                abilityID: 44457
+                                                            ) {
+                                                                data
+                                                            }
+                                                            LBGraph: graph(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Debuffs,
+                                                                abilityID: 44457
+                                                            )
+                                                            NTEvents: events(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Debuffs,
+                                                                abilityID: 114923
+                                                            ) {
+                                                                data
+                                                            }
+                                                            NTGraph: graph(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Debuffs,
+                                                                abilityID: 114923
+                                                            )
+                                                            castUptimeEvents: events(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Casts
+                                                            ) {
+                                                                data
+                                                            }
+                                                            icelanceFoFEvents: events(
+                                                                fightIDs: [${fightId}],
+                                                                sourceID: ${charId},
+                                                                dataType: Casts,
+                                                                filterExpression: "type = 'cast' and ability.id = 30455 and not in range from type = 'applybuff' and ability.id = 44544 to type = 'removebuff' and ability.id = 44544 group by source end"
+                                                            ) {
+                                                                data
+                                                            }
+                                                        }
+                                                    }
                                                 }
-                                                potionEvents: events(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Buffs,
-                                                    abilityID: 105702
-                                                ) {
-                                                    data
-                                                }
-                                                potionGraph: graph(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Buffs,
-                                                    abilityID: 105702
-                                                )
-                                                evoGraph: graph(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Buffs,
-                                                    abilityID: 116257
-                                                )
-                                                runeGraph: graph(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Buffs,
-                                                    abilityID: 116014
-                                                )
-                                                glovesEvents: events(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Buffs,
-                                                    abilityID: 96230
-                                                ) {
-                                                    data
-                                                }
-                                                glovesGraph: graph(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Buffs,
-                                                    abilityID: 96230
-                                                )
-                                                LBEvents: events(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Debuffs,
-                                                    abilityID: 44457
-                                                ) {
-                                                    data
-                                                }
-                                                LBGraph: graph(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Debuffs,
-                                                    abilityID: 44457
-                                                )
-                                                NTEvents: events(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Debuffs,
-                                                    abilityID: 114923
-                                                ) {
-                                                    data
-                                                }
-                                                NTGraph: graph(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Debuffs,
-                                                    abilityID: 114923
-                                                )
-                                                castUptimeEvents: events(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Casts
-                                                ) {
-                                                    data
-                                                }
-                                                icelanceFoFEvents: events(
-                                                    fightIDs: [${fightId}],
-                                                    sourceID: ${charId},
-                                                    dataType: Casts,
-                                                    filterExpression: "type = 'cast' and ability.id = 30455 and not in range from type = 'applybuff' and ability.id = 44544 to type = 'removebuff' and ability.id = 44544 group by source end"
-                                                ) {
-                                                    data
-                                                }
-                                            }
-                                        }
-                                    }
-                                `,
+                                            `,
                 };
             }
 
             function getCharListFromAllFightsQuery(logId, fightIds) {
                 return {
                     query: `
-                                    query {
-                                        reportData {
-                                            report(code: "${logId}") {
-                                                playerDetails(fightIDs:[${fightIds}], includeCombatantInfo:true)
-                                            }
-                                        }
-                                    }
-                                `,
+                                                query {
+                                                    reportData {
+                                                        report(code: "${logId}") {
+                                                            playerDetails(fightIDs:[${fightIds}], includeCombatantInfo:true)
+                                                        }
+                                                    }
+                                                }
+                                            `,
                 };
             }
 
